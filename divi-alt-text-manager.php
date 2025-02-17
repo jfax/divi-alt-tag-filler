@@ -1,9 +1,10 @@
 <?php
 /**
  * Plugin Name: Divi ALT-Text Manager
- * Description: Listet alle Bilder aus Divi's et_pb_image-Modulen und erlaubt das Bearbeiten der ALT-Texte.
+ * Description: Listet alle Bilder aus Divi's et_pb_image-Modulen und erlaubt das Bulk-Bearbeiten der ALT-Texte.
  * Version: 1.0
- * Author: Dein Name
+ * Author: Jens Fuchs
+ * Author URI: https://www.d-mind.de
  */
 
 if (!defined('ABSPATH')) {
@@ -12,7 +13,7 @@ if (!defined('ABSPATH')) {
 
 // Admin-Menü-Eintrag hinzufügen
 function datm_add_menu_page() {
-	add_menu_page('Divi ALT-Text Manager', 'Divi ALT-Manager', 'manage_options', 'divi-alt-text-manager', 'datm_admin_page');
+	add_menu_page('Divi Bulk Alt-Text', 'Divi Bulk Alt-Text', 'manage_options', 'divi-alt-text-manager', 'datm_admin_page');
 }
 add_action('admin_menu', 'datm_add_menu_page');
 
@@ -24,18 +25,18 @@ function datm_admin_page() {
 	$posts = $wpdb->get_results("
         SELECT ID, post_content 
         FROM {$wpdb->posts} 
-        WHERE post_type IN ('page', 'post', 'et_pb_layout') 
+        WHERE post_type IN ('page', 'post') 
         AND post_content LIKE '%et_pb_image%'
         AND post_status = 'publish'
         ORDER BY ID ASC
-        LIMIT 0, 100000
+        LIMIT 0, 5
     ");
 
 	echo '<div class="wrap">';
 	echo '<h1>Divi ALT-Text Manager</h1>';
 	echo '<form method="post" action="">';
 	echo '<table class="wp-list-table widefat fixed striped">';
-	echo '<thead><tr><th>Bild</th><th>ALT-Text</th></tr></thead><tbody>';
+	echo '<thead><tr><th>'.__('Bild', 'divi-alt-text-manage').'</th><th>'.__('Alt-Text', 'divi-alt-text-manage').'</th></tr></thead><tbody>';
 
 	wp_nonce_field('save_alt_texts', 'datm_nonce');
 
@@ -43,7 +44,7 @@ function datm_admin_page() {
 	foreach ($posts as $post) {
 		$content = maybe_unserialize($post->post_content);
 
-		echo '<tr><td colspan="4">Prüfe ID '.$post->ID.'</td></tr>';
+		echo '<tr><th colspan="4">'.__('Prüfe', 'divi-alt-text-manage').' Post-ID '.$post->ID.' ('. get_the_title($post->ID) .')</th></tr>';
 
 		if ($content) {
 			$images = datm_extract_images_without_alt($content);
@@ -59,13 +60,13 @@ function datm_admin_page() {
 				$count++;
 			}
 			if (!$images) {
-				echo '<tr><td colspan="4">Keine Bilder gefunden</td></tr>';
+				echo '<tr><td colspan="4">'.__('Keine Bilder gefunden', 'divi-alt-text-manage').'</td></tr>';
 			}
 		}
 	}
 
 	echo '</tbody></table>';
-	echo '<br><input type="submit" name="save_alt_texts" class="button-primary" value="Speichern">';
+	echo '<br><input type="submit" name="save_alt_texts" class="button-primary" value="'.__('Speichern', 'divi-alt-text-manage').'">';
 	echo '</form>';
 	echo '</div>';
 }
@@ -135,11 +136,13 @@ function datm_save_alt_texts() {
 						['post_content' => $updated_content],
 						['ID' => $post_id]
 					);
+
+					echo '<div class="updated"><p>"'.esc_attr($new_alt_text).'" zu Post <a href="' . get_the_permalink($post_id) . '">"'.get_the_title($post_id).'"</a> gespeichert.</p></div>';
 				}
 			}
 		}
 
-		echo '<div class="updated"><p>'.$t.'ALT-Texte gespeichert!</p></div>';
+		//echo '<div class="updated"><p>'.$t.'ALT-Texte gespeichert!</p></div>';
 	}
 }
 add_action('admin_init', 'datm_save_alt_texts');
