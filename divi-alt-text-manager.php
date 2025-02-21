@@ -17,9 +17,24 @@ function datm_add_menu_page() {
 }
 add_action('admin_menu', 'datm_add_menu_page');
 
+// Admin-Menü-Eintrag für die Subseite hinzufügen
+function datm_add_submenu_page() {
+	add_submenu_page(
+		'divi-alt-text-manager', // Slug der Hauptseite (muss mit deinem Hauptmenü übereinstimmen)
+		'Einstellungen',         // Titel der Unterseite
+		'Einstellungen',         // Titel im Menü
+		'manage_options',        // Berechtigungen
+		'divi-alt-text-settings',// Slug der Unterseite
+		'datm_settings_page'     // Callback-Funktion für die Anzeige der Seite
+	);
+}
+add_action('admin_menu', 'datm_add_submenu_page');
+
+
 // Funktion für die Admin-Seite
 function datm_admin_page() {
 	global $wpdb;
+	$amount_articles = get_option('dmind_amount_articles', 15);
 
 	// Alle Divi-Layouts durchsuchen
 	$posts = $wpdb->get_results("
@@ -29,7 +44,7 @@ function datm_admin_page() {
         AND post_content LIKE '%et_pb_image%'
         AND post_status = 'publish'
         ORDER BY ID ASC
-        LIMIT 0, 5
+        LIMIT 0, $amount_articles
     ");
 
 	echo '<div class="wrap">';
@@ -146,3 +161,44 @@ function datm_save_alt_texts() {
 	}
 }
 add_action('admin_init', 'datm_save_alt_texts');
+
+
+function datm_settings_page() {
+	?>
+	<div class="wrap">
+		<h1>Divi Alt-Text Einstellungen</h1>
+		<form method="post" action="options.php">
+			<?php
+			settings_fields('datm_settings_group'); // Name der Einstellungsgruppe
+			do_settings_sections('divi-alt-text-settings'); // Slug der Seite
+			submit_button();
+			?>
+		</form>
+	</div>
+	<?php
+}
+
+function datm_register_settings() {
+	register_setting('datm_settings_group', 'dmind_amount_articles'); // Name der Option
+
+	add_settings_section(
+		'datm_main_section',
+		'Anzahl der Artikel',
+		null,
+		'divi-alt-text-settings'
+	);
+
+	add_settings_field(
+		'dmind_amount_articles',
+		'Bitte die Anzahl der Artikel eingeben (leer=15)',
+		'dmind_amount_articles_callback',
+		'divi-alt-text-settings',
+		'datm_main_section'
+	);
+}
+add_action('admin_init', 'datm_register_settings');
+
+function dmind_amount_articles_callback() {
+	$value = get_option('dmind_amount_articles', '');
+	echo '<input type="text" name="dmind_amount_articles" value="' . esc_attr($value) . '" />';
+}
