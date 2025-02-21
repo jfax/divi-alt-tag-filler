@@ -44,41 +44,46 @@ function datm_admin_page() {
         AND post_content LIKE '%et_pb_image%'
         AND post_status = 'publish'
         ORDER BY ID ASC
-        LIMIT 0, $amount_articles
+        LIMIT 0, 100000000
     ");
 
 	echo '<div class="wrap">';
 	echo '<h1>Divi ALT-Text Manager</h1>';
+    echo '<h3>Anzahl der Seiten: '.sizeof($posts).', Limit ist eingestellt auf '.$amount_articles.'</h3>';
 	echo '<form method="post" action="">';
 	echo '<table class="wp-list-table widefat fixed striped">';
 	echo '<thead><tr><th>'.__('Bild', 'divi-alt-text-manage').'</th><th>'.__('Alt-Text', 'divi-alt-text-manage').'</th></tr></thead><tbody>';
 
 	wp_nonce_field('save_alt_texts', 'datm_nonce');
 
-	$count = 0;
-	foreach ($posts as $post) {
+	$count = $countEmpty = 0;
+	foreach ($posts as $k=>$post) {
 		$content = maybe_unserialize($post->post_content);
 
-		echo '<tr><th colspan="4">'.__('Prüfe', 'divi-alt-text-manage').' Post-ID '.$post->ID.' ('. get_the_title($post->ID) .')</th></tr>';
-
-		if ($content) {
-			$images = datm_extract_images_without_alt($content);
-			foreach ($images as $image) {
-				echo '<tr>';
-				echo '<td><img src="' . esc_url($image) . '" width="150"></td>';
-				echo '<td><a href="'.get_permalink($post->ID).'">Seite (ID '.$post->ID.')</a></td>';
-				echo '<td>' . esc_url($image) . '</td>';
-				echo '<td><input type="text" name="alt_texts[' . $count . ']" value="">';
-				echo '<input type="hidden" name="image_urls[' . $count . ']" value="' . esc_url($image) . '">';
-				echo '<input type="hidden" name="post_ids[' . $count . ']" value="' . $post->ID . '"></td>';
-				echo '</tr>';
-				$count++;
+		if ($count < $amount_articles+$countEmpty) {
+			echo '<tr><th colspan="4">Seite '. ($k+1) .' - '.__('Prüfe', 'divi-alt-text-manage').' Post-ID '.$post->ID.' ('. get_the_title($post->ID) .')</th></tr>';
+			if ($content) {
+				$images = datm_extract_images_without_alt($content);
+				foreach ($images as $image) {
+					echo '<tr>';
+					echo '<td><img src="' . esc_url($image) . '" width="150"></td>';
+					echo '<td><a href="'.get_permalink($post->ID).'">Seite (ID '.$post->ID.')</a></td>';
+					echo '<td>' . esc_url($image) . '</td>';
+					echo '<td><input type="text" name="alt_texts[' . $count . ']" value="">';
+					echo '<input type="hidden" name="image_urls[' . $count . ']" value="' . esc_url($image) . '">';
+					echo '<input type="hidden" name="post_ids[' . $count . ']" value="' . $post->ID . '"></td>';
+					echo '</tr>';
+				}
+				if (!$images) {
+					$countEmpty++;
+					echo '<tr><td colspan="4">'.__('Keine Bilder gefunden', 'divi-alt-text-manage').'</td></tr>';
+				}
 			}
-			if (!$images) {
-				echo '<tr><td colspan="4">'.__('Keine Bilder gefunden', 'divi-alt-text-manage').'</td></tr>';
-			}
-		}
+			$count++;
+        }
 	}
+
+    echo "<tr><td colspan='4'>".__('Es wurden', 'divi-alt-text-manage')." $countEmpty ".__('Artikel ohne Bilder gefunden, daher wurde das Limit erhöht', 'divi-alt-text-manage')."</td></tr>";
 
 	echo '</tbody></table>';
 	echo '<br><input type="submit" name="save_alt_texts" class="button-primary" value="'.__('Speichern', 'divi-alt-text-manage').'">';
