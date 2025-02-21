@@ -64,14 +64,14 @@ function datm_admin_page() {
 			echo '<tr><th colspan="4">Seite '. ($k+1) .' - '.__('Prüfe', 'divi-alt-text-manage').' Post-ID '.$post->ID.' ('. get_the_title($post->ID) .')</th></tr>';
 			if ($content) {
 				$images = datm_extract_images_without_alt($content);
-				foreach ($images as $image) {
+				foreach ($images as $k=>$image) {
 					echo '<tr>';
 					echo '<td><img src="' . esc_url($image) . '" width="150"></td>';
 					echo '<td><a href="'.get_permalink($post->ID).'">Seite (ID '.$post->ID.')</a></td>';
 					echo '<td>' . esc_url($image) . '</td>';
-					echo '<td><input type="text" name="alt_texts[' . $count . ']" value="">';
-					echo '<input type="hidden" name="image_urls[' . $count . ']" value="' . esc_url($image) . '">';
-					echo '<input type="hidden" name="post_ids[' . $count . ']" value="' . $post->ID . '"></td>';
+					echo '<td><input type="text" name="alt_texts[' . $post->ID . $k . ']" value="">';
+					echo '<input type="hidden" name="image_urls[' . $post->ID . $k . ']" value="' . esc_url($image) . '">';
+					echo '<input type="hidden" name="post_ids[' . $post->ID . $k . ']" value="' . $post->ID . '"></td>';
 					echo '</tr>';
 				}
 				if (!$images) {
